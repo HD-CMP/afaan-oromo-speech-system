@@ -15,9 +15,21 @@ An AI-powered Speech-to-Text system for the Afaan Oromo language, developed as p
 ## Features
 
 - **Speech-to-Text Transcription**: Convert Afaan Oromo audio to text
-- **Subtitle Generation**: Automatic .srt subtitle creation
+- **Subtitle Generation**: Automatic .srt and .txt subtitle creation
 - **Real-time Processing**: Fast inference using Whisper model
+- **Chunked Processing**: Handles long audio files up to 10 minutes
+- **Live Transcription**: WebSocket streaming for real-time transcription
 - **Mobile-Ready**: RESTful API for Android/iOS apps
+
+## Audio Limits
+
+| Limit | Value | Note |
+|-------|-------|------|
+| **Max File Size** | 500 MB | Hard limit |
+| **Max Duration** | 10 minutes | Hard limit to prevent timeouts |
+| **Recommended Duration** | 3 minutes | Optimal for free tier performance |
+
+**Note:** Files longer than 3 minutes are processed in 60-second chunks to avoid HuggingFace free tier timeouts.
 
 ## API Endpoints
 
@@ -112,6 +124,33 @@ async def live_transcribe():
 
 asyncio.run(live_transcribe())
 ```
+
+## Troubleshooting
+
+### Space Sleeps After Inactivity
+**Issue:** First request after 48 hours takes 30-60 seconds  
+**Solution:** Mobile app automatically handles wake-up with extended timeout
+
+### Timeout with Long Audio
+**Issue:** Processing fails or disconnects with long files  
+**Solution:** 
+- Keep audio under 3 minutes for best results
+- API automatically chunks longer files (up to 10 minutes)
+- Files over 10 minutes are rejected
+
+### Connection Refused
+**Issue:** Cannot connect to API  
+**Solution:**
+- Check if Space is awake: visit `/health` endpoint
+- Wait 60 seconds for Space to wake up
+- Retry request
+
+### Slow Processing
+**Issue:** Transcription takes too long  
+**Solution:**
+- Free tier uses CPU (slower)
+- Consider upgrading to GPU tier ($0.60/hour)
+- Reduce audio file size/duration
 
 ## Technology Stack
 

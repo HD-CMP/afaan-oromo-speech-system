@@ -46,6 +46,10 @@ COMPRESSION_RATIO_THRESHOLD = 2.4
 LOGPROB_THRESHOLD = -1.0
 NO_SPEECH_THRESHOLD = 0.6
 
+MAX_FILE_SIZE_MB = 500
+MAX_AUDIO_DURATION_SECONDS = 600
+RECOMMENDED_DURATION_SECONDS = 180
+
 @app.on_event("startup")
 async def startup_event():
     global asr_pipeline
@@ -81,6 +85,11 @@ async def health_check():
         "model_loaded": asr_pipeline is not None,
         "model": MODEL_PATH,
         "device": "GPU" if torch.cuda.is_available() else "CPU",
+        "limits": {
+            "max_file_size_mb": MAX_FILE_SIZE_MB,
+            "max_duration_minutes": MAX_AUDIO_DURATION_SECONDS // 60,
+            "recommended_duration_minutes": RECOMMENDED_DURATION_SECONDS // 60
+        },
         "quality_settings": {
             "num_beams": NUM_BEAMS,
             "temperature": TEMPERATURE,
@@ -90,6 +99,36 @@ async def health_check():
         }
     }
 
+def get_audio_duration(file_path):
+    """Get audio duration without loading entire file"""
+    try:
+        duration = librosa.get_duration(path=file_path)
+        return duration
+    except Exception as e:
+        print(f"Error getting duration: {e}")
+        return None
+
+def validate_audio_file(file_path):
+    """Validate audio file size and duration"""
+    file_size = os.path.getsize(file_path)
+    if file_size > MAX_FILE_SIZE_MB * 1024 * 1024:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"File too large (max {MAX_FILE_SIZE_MB}MB)"
+        )
+    
+    duration = get_audio_duration(file_path)
+    if duration is None:
+        raise HTTPException(status_code=400, detail="Invalid audio file")
+    
+    if duration > MAX_AUDIO_DURATION_SECONDS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Audio too long (max {MAX_AUDIO_DURATION_SECONDS//60} minutes). Current: {duration//60:.1f} minutes"
+        )
+    
+    return duration
+
 def preprocess_audio(audio, sr=16000):
     audio, _ = librosa.effects.trim(audio, top_db=20)
     rms = np.sqrt(np.mean(audio**2))
@@ -98,6 +137,72 @@ def preprocess_audio(audio, sr=16000):
         audio = audio * (target_rms / rms)
     audio = np.clip(audio, -1.0, 1.0)
     return audio
+
+def process_long_audio_chunked(audio, sr=16000):
+    """Process long audio in chunks to avoid timeout"""
+    chunk_duration = 60
+    chunk_samples = chunk_duration * sr
+    
+    if len(audio) <= chunk_samples * 2:
+        audio = preprocess_audio(audio, sr)
+        result = asr_pipeline(
+            {"array": audio, "sampling_rate": sr},
+            return_timestamps="word",
+            chunk_length_s=CHUNK_LENGTH,
+            batch_size=BATCH_SIZE,
+            generate_kwargs={
+                "task": "transcribe",
+                "language": None,
+                "return_timestamps": True,
+                "num_beams": NUM_BEAMS,
+                "max_length": 225,
+                "temperature": TEMPERATURE,
+                "compression_ratio_threshold": COMPRESSION_RATIO_THRESHOLD,
+                "logprob_threshold": LOGPROB_THRESHOLD,
+                "no_speech_threshold": NO_SPEECH_THRESHOLD,
+            }
+        )
+        return result
+    
+    all_chunks = []
+    for i in range(0, len(audio), chunk_samples):
+        chunk = audio[i:i + chunk_samples]
+        chunk = preprocess_audio(chunk, sr)
+        
+        result = asr_pipeline(
+            {"array": chunk, "sampling_rate": sr},
+            return_timestamps="word",
+            chunk_length_s=CHUNK_LENGTH,
+            batch_size=BATCH_SIZE,
+            generate_kwargs={
+                "task": "transcribe",
+                "language": None,
+                "return_timestamps": True,
+                "num_beams": 1,
+                "max_length": 225,
+                "temperature": TEMPERATURE,
+                "compression_ratio_threshold": COMPRESSION_RATIO_THRESHOLD,
+                "logprob_threshold": LOGPROB_THRESHOLD,
+                "no_speech_threshold": NO_SPEECH_THRESHOLD,
+            }
+        )
+        
+        if result.get("chunks"):
+            offset = i / sr
+            for chunk_data in result["chunks"]:
+                if chunk_data.get("timestamp"):
+                    timestamp = chunk_data["timestamp"]
+                    chunk_data["timestamp"] = [
+                        (timestamp[0] or 0) + offset,
+                        (timestamp[1] or timestamp[0] or 0) + offset
+                    ]
+            all_chunks.extend(result["chunks"])
+    
+    combined_text = " ".join([c.get("text", "") for c in all_chunks if c.get("text")])
+    return {
+        "text": combined_text,
+        "chunks": all_chunks
+    }
 
 def clean_text(text):
     if not text:
@@ -176,49 +281,46 @@ async def transcribe_audio(file: UploadFile = File(...)):
         with open(temp_file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
+        duration = validate_audio_file(temp_file_path)
         file_size = os.path.getsize(temp_file_path)
-        if file_size > 500 * 1024 * 1024:
-            raise HTTPException(status_code=400, detail="File too large (max 500MB)")
+        
+        warning = None
+        if duration > RECOMMENDED_DURATION_SECONDS:
+            warning = f"Audio is {duration//60:.1f} minutes. Processing may take longer and could timeout on free tier."
         
         audio, sr = librosa.load(temp_file_path, sr=16000, mono=True)
-        audio = preprocess_audio(audio)
         
-        result = asr_pipeline(
-            {"array": audio, "sampling_rate": sr},
-            return_timestamps="word",
-            chunk_length_s=CHUNK_LENGTH,
-            batch_size=BATCH_SIZE,
-            generate_kwargs={
-                "task": "transcribe",
-                "language": None,
-                "return_timestamps": True,
-                "num_beams": NUM_BEAMS,
-                "max_length": 225,
-                "temperature": TEMPERATURE,
-                "compression_ratio_threshold": COMPRESSION_RATIO_THRESHOLD,
-                "logprob_threshold": LOGPROB_THRESHOLD,
-                "no_speech_threshold": NO_SPEECH_THRESHOLD,
-            }
-        )
+        result = process_long_audio_chunked(audio, sr)
         
         text = clean_text(result.get("text", ""))
         word_count = len(text.split())
         
-        return {
+        response_data = {
             "text": text,
             "word_count": word_count,
             "character_count": len(text),
             "metadata": {
-                "duration": round(len(audio) / sr, 2),
+                "duration": round(duration, 2),
                 "size": file_size
             }
         }
         
+        if warning:
+            response_data["warning"] = warning
+        
+        return response_data
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Transcription error: {e}")
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
     finally:
         if temp_file_path and os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
+            try:
+                os.remove(temp_file_path)
+            except Exception as e:
+                print(f"Cleanup error: {e}")
 
 @app.post("/generate-subtitles-json")
 async def generate_subtitles_json(file: UploadFile = File(...)):
@@ -230,26 +332,11 @@ async def generate_subtitles_json(file: UploadFile = File(...)):
         with open(temp_file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
-        audio, sr = librosa.load(temp_file_path, sr=16000, mono=True)
-        audio = preprocess_audio(audio)
+        duration = validate_audio_file(temp_file_path)
         
-        result = asr_pipeline(
-            {"array": audio, "sampling_rate": sr},
-            return_timestamps="word",
-            chunk_length_s=CHUNK_LENGTH,
-            batch_size=BATCH_SIZE,
-            generate_kwargs={
-                "task": "transcribe",
-                "language": None,
-                "return_timestamps": True,
-                "num_beams": NUM_BEAMS,
-                "max_length": 225,
-                "temperature": TEMPERATURE,
-                "compression_ratio_threshold": COMPRESSION_RATIO_THRESHOLD,
-                "logprob_threshold": LOGPROB_THRESHOLD,
-                "no_speech_threshold": NO_SPEECH_THRESHOLD,
-            }
-        )
+        audio, sr = librosa.load(temp_file_path, sr=16000, mono=True)
+        
+        result = process_long_audio_chunked(audio, sr)
         
         chunks = result.get("chunks", [])
         subtitles = []
@@ -269,14 +356,21 @@ async def generate_subtitles_json(file: UploadFile = File(...)):
         
         return {
             "subtitles": subtitles,
-            "total_chunks": len(subtitles)
+            "total_chunks": len(subtitles),
+            "duration": round(duration, 2)
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Subtitle generation error: {e}")
+        raise HTTPException(status_code=500, detail=f"Subtitle generation failed: {str(e)}")
     finally:
         if temp_file_path and os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
+            try:
+                os.remove(temp_file_path)
+            except Exception as e:
+                print(f"Cleanup error: {e}")
 
 @app.post("/generate-subtitles")
 async def generate_subtitles_file(file: UploadFile = File(...), format: str = "srt"):
@@ -293,26 +387,11 @@ async def generate_subtitles_file(file: UploadFile = File(...), format: str = "s
         with open(temp_file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
-        audio, sr = librosa.load(temp_file_path, sr=16000, mono=True)
-        audio = preprocess_audio(audio)
+        duration = validate_audio_file(temp_file_path)
         
-        result = asr_pipeline(
-            {"array": audio, "sampling_rate": sr},
-            return_timestamps="word",
-            chunk_length_s=CHUNK_LENGTH,
-            batch_size=BATCH_SIZE,
-            generate_kwargs={
-                "task": "transcribe",
-                "language": None,
-                "return_timestamps": True,
-                "num_beams": NUM_BEAMS,
-                "max_length": 225,
-                "temperature": TEMPERATURE,
-                "compression_ratio_threshold": COMPRESSION_RATIO_THRESHOLD,
-                "logprob_threshold": LOGPROB_THRESHOLD,
-                "no_speech_threshold": NO_SPEECH_THRESHOLD,
-            }
-        )
+        audio, sr = librosa.load(temp_file_path, sr=16000, mono=True)
+        
+        result = process_long_audio_chunked(audio, sr)
         
         chunks = result.get("chunks", [])
         subtitles = []
@@ -356,10 +435,14 @@ async def generate_subtitles_file(file: UploadFile = File(...), format: str = "s
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Subtitle file generation error: {e}")
+        raise HTTPException(status_code=500, detail=f"Subtitle generation failed: {str(e)}")
     finally:
         if temp_file_path and os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
+            try:
+                os.remove(temp_file_path)
+            except Exception as e:
+                print(f"Cleanup error: {e}")
         if output_file_path and os.path.exists(output_file_path):
             asyncio.create_task(cleanup_file_later(output_file_path, delay=60))
 
