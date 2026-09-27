@@ -4,6 +4,7 @@ import '../models/subtitle_result.dart';
 import '../models/transcription_history.dart';
 import '../services/api_service.dart';
 import '../services/history_service.dart';
+import '../services/notification_service.dart';
 
 enum SubtitleStatus {
   idle,
@@ -63,7 +64,11 @@ class SubtitleProvider with ChangeNotifier {
       
       _status = SubtitleStatus.completed;
       notifyListeners();
-      
+
+      // 🔔 Notify user — works even if they left the screen
+      final fileName = _currentFilePath?.split('/').last;
+      await NotificationService.subtitleDone(fileName);
+
       // Save to history
       await saveToHistory();
     } catch (e) {
@@ -71,6 +76,9 @@ class SubtitleProvider with ChangeNotifier {
       _errorMessage = e.toString();
       notifyListeners();
       debugPrint('Subtitle generation error: $e');
+
+      // 🔔 Notify on error
+      await NotificationService.taskError('Subtitle Generation', _errorMessage ?? 'Unknown error');
     }
   }
   

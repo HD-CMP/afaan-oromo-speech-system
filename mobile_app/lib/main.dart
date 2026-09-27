@@ -10,6 +10,7 @@ import 'providers/localization_provider.dart';
 import 'providers/tts_provider.dart';
 import 'config/app_theme.dart';
 import 'config/api_config.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +22,9 @@ void main() async {
   
   // Initialize API config from saved preferences
   await ApiConfig.initialize();
+
+  // Initialize notification channel (creates Android channel, no-op on other platforms)
+  await NotificationService.initialize();
   
   runApp(const AafanOromoSTTApp());
 }

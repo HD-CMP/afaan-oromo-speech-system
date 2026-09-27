@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/tts_result.dart';
 import '../services/tts_api_service.dart';
 import '../services/ocr_service.dart';
+import '../services/notification_service.dart';
 
 /// State management for TTS operations
 class TtsProvider extends ChangeNotifier {
@@ -135,10 +136,16 @@ class TtsProvider extends ChangeNotifier {
       _history.insert(0, result);
       _statusMessage = 'Speech generated successfully!';
       _errorMessage = null;
+
+      // 🔔 Notify user — works even if they left the screen
+      await NotificationService.ttsDone();
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
       _statusMessage = '';
       debugPrint('[TTS] Synthesis error: $e');
+
+      // 🔔 Notify on error
+      await NotificationService.taskError('Speech Generation', _errorMessage ?? 'Unknown error');
     } finally {
       _isProcessing = false;
       _isWakingUp = false;

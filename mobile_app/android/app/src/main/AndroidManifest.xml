@@ -10,6 +10,9 @@
     
     <!-- Permissions for microphone (future use) -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+
+    <!-- Permissions for notifications (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     
     <application
         android:label="Afaan Oromo AI"

@@ -6,6 +6,7 @@ import '../models/transcription_result.dart';
 import '../models/transcription_history.dart';
 import '../services/api_service.dart';
 import '../services/history_service.dart';
+import '../services/notification_service.dart';
 
 enum TranscriptionStatus {
   idle,
@@ -346,7 +347,10 @@ class TranscriptionProvider with ChangeNotifier {
       _progressMessage = 'Completed!';
       _processingProgress = 100;
       notifyListeners();
-      
+
+      // 🔔 Notify user — works even if they left the screen
+      await NotificationService.transcriptionDone(_fileName);
+
       await saveToHistory();
     } catch (e) {
       _status = TranscriptionStatus.error;
@@ -354,7 +358,10 @@ class TranscriptionProvider with ChangeNotifier {
       _progressMessage = 'Error occurred';
       notifyListeners();
       debugPrint('Transcription error: $e');
-      
+
+      // 🔔 Notify on error too
+      await NotificationService.taskError('Transcription', _errorMessage ?? 'Unknown error');
+
       // Add to queue for manual retry if connection error
       if (e.toString().contains('connection') || 
           e.toString().contains('timeout') || 
