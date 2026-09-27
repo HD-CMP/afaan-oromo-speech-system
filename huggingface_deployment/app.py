@@ -132,7 +132,7 @@ def validate_audio_file(file_path):
 def preprocess_audio(audio, sr=16000):
     audio, _ = librosa.effects.trim(audio, top_db=20)
     rms = np.sqrt(np.mean(audio**2))
-    if rms > 0:
+    if rms > 1e-3:  # Skip normalization for nearly silent audio
         target_rms = 10**(-20/20)
         audio = audio * (target_rms / rms)
     audio = np.clip(audio, -1.0, 1.0)
@@ -151,9 +151,6 @@ def process_long_audio_chunked(audio, sr=16000):
             chunk_length_s=CHUNK_LENGTH,
             batch_size=BATCH_SIZE,
             generate_kwargs={
-                "task": "transcribe",
-                "language": None,
-                "return_timestamps": True,
                 "num_beams": NUM_BEAMS,
                 "max_length": 225,
                 "temperature": TEMPERATURE,
@@ -167,7 +164,6 @@ def process_long_audio_chunked(audio, sr=16000):
     all_chunks = []
     for i in range(0, len(audio), chunk_samples):
         chunk = audio[i:i + chunk_samples]
-        chunk = preprocess_audio(chunk, sr)
         
         result = asr_pipeline(
             {"array": chunk, "sampling_rate": sr},
@@ -175,9 +171,6 @@ def process_long_audio_chunked(audio, sr=16000):
             chunk_length_s=CHUNK_LENGTH,
             batch_size=BATCH_SIZE,
             generate_kwargs={
-                "task": "transcribe",
-                "language": None,
-                "return_timestamps": True,
                 "num_beams": 1,
                 "max_length": 225,
                 "temperature": TEMPERATURE,
@@ -211,6 +204,148 @@ def clean_text(text):
     if text and text[-1] not in '.!?።':
         text += '.'
     return text
+
+def create_segments_from_chunks(result, max_words_per_segment=10, min_pause_duration=0.3):
+    """Create subtitle segments with intelligent pause detection"""
+    segments = []
+    
+    if "chunks" not in result or not result["chunks"]:
+        text = result.get("text", "")
+        if text.strip():
+            words = text.split()
+            duration = max(3.0, len(words) / 2.5)
+            segments.append({
+                "start": float(0.0),
+                "end": float(duration),
+                "text": str(text)
+            })
+        return segments
+    
+    word_chunks = []
+    for idx, chunk in enumerate(result["chunks"]):
+        try:
+            timestamp = chunk.get("timestamp", (0, None))
+            text = chunk.get("text", "").strip()
+            
+            if not text:
+                continue
+            
+            if isinstance(timestamp, (list, tuple)) and len(timestamp) >= 2:
+                start = float(timestamp[0]) if timestamp[0] is not None else 0.0
+                end = timestamp[1]
+                
+                if end is None:
+                    words = text.split()
+                    estimated_duration = max(0.5, len(words) / 2.5)
+                    end = start + estimated_duration
+                else:
+                    end = float(end)
+            else:
+                start = 0.0
+                end = 1.0
+            
+            word_chunks.append({
+                "start": float(start),
+                "end": float(end),
+                "text": str(text)
+            })
+        except Exception as e:
+            print(f"[ERROR] Processing chunk {idx}: {e}, chunk: {chunk}")
+            continue
+    
+    if not word_chunks:
+        return segments
+    
+    current_segment = []
+    segment_start = None
+    
+    for i, chunk in enumerate(word_chunks):
+        if segment_start is None:
+            segment_start = chunk["start"]
+        
+        current_segment.append(chunk["text"])
+        
+        should_break = False
+        is_last = (i == len(word_chunks) - 1)
+        
+        if is_last:
+            should_break = True
+        else:
+            next_chunk = word_chunks[i + 1]
+            pause = next_chunk["start"] - chunk["end"]
+            
+            total_words = sum(len(c.split()) for c in current_segment)
+            has_pause = pause >= min_pause_duration
+            text = chunk["text"].strip()
+            has_punctuation = text and text[-1] in '.!?።'
+            too_many_words = total_words >= max_words_per_segment
+            
+            if has_pause or has_punctuation:
+                should_break = True
+            elif too_many_words and pause >= min_pause_duration * 0.3:
+                should_break = True
+            elif total_words >= max_words_per_segment * 1.5:
+                should_break = True
+        
+        if should_break:
+            segment_text = " ".join(current_segment).strip()
+            segment_text = clean_text(segment_text)
+            segment_end = chunk["end"]
+            
+            if segment_text:
+                segments.append({
+                    "start": float(round(segment_start, 2)),
+                    "end": float(round(segment_end, 2)),
+                    "text": str(segment_text)
+                })
+            
+            current_segment = []
+            segment_start = None
+    
+    # Merge very short segments
+    merged = []
+    i = 0
+    while i < len(segments):
+        current = segments[i]
+        word_count = len(current["text"].split())
+        
+        if word_count <= 2 and i < len(segments) - 1:
+            next_seg = segments[i + 1]
+            gap = next_seg["start"] - current["end"]
+            
+            if gap < 0.5:
+                merged_text = f"{current['text']} {next_seg['text']}"
+                merged_text = clean_text(merged_text)
+                merged.append({
+                    "start": float(current["start"]),
+                    "end": float(next_seg["end"]),
+                    "text": str(merged_text)
+                })
+                i += 2
+                continue
+        
+        merged.append(current)
+        i += 1
+    
+    segments = merged
+    
+    # Final cleanup
+    for i in range(len(segments)):
+        seg = segments[i]
+        
+        if seg["end"] - seg["start"] < 0.2:
+            seg["end"] = float(seg["start"] + 0.2)
+        
+        if i < len(segments) - 1:
+            next_seg = segments[i + 1]
+            if seg["end"] > next_seg["start"]:
+                seg["end"] = float(next_seg["start"] - 0.05)
+        
+        seg["start"] = float(round(seg["start"], 2))
+        seg["end"] = float(round(seg["end"], 2))
+        seg["text"] = str(seg["text"])
+    
+    return segments
 
 def format_timestamp_srt(seconds):
     """Convert seconds to SRT timestamp format (HH:MM:SS,mmm)"""
@@ -256,8 +391,6 @@ async def process_audio_chunk(audio_data: bytes, sample_rate: int = 16000):
             return_timestamps=False,
             chunk_length_s=CHUNK_LENGTH,
             generate_kwargs={
-                "task": "transcribe",
-                "language": None,
                 "num_beams": 1,
                 "max_length": 225,
                 "temperature": TEMPERATURE,
@@ -295,25 +428,35 @@ async def transcribe_audio(file: UploadFile = File(...)):
         text = clean_text(result.get("text", ""))
         word_count = len(text.split())
         
+        print(f"[DEBUG] Transcription result - text length: {len(text)}, word count: {word_count}")
+        
         response_data = {
-            "text": text,
-            "word_count": word_count,
-            "character_count": len(text),
+            "success": True,
+            "text": str(text),
             "metadata": {
-                "duration": round(duration, 2),
-                "size": file_size
+                "word_count": int(word_count),
+                "character_count": int(len(text)),
+                "duration": float(round(duration, 2)),
+                "file_size": int(file_size),
+                "filename": str(file.filename),
+                "timestamp": str(datetime.utcnow().isoformat())
             }
         }
         
         if warning:
-            response_data["warning"] = warning
+            response_data["warning"] = str(warning)
         
-        return response_data
+        print(f"[DEBUG] Response data: {response_data}")
+        
+        return JSONResponse(response_data)
         
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Transcription error: {e}")
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"[ERROR] Transcription error: {e}")
+        print(f"[ERROR] Traceback:\n{error_details}")
         raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
     finally:
         if temp_file_path and os.path.exists(temp_file_path):
@@ -324,6 +467,16 @@ async def transcribe_audio(file: UploadFile = File(...)):
 
 @app.post("/generate-subtitles-json")
 async def generate_subtitles_json(file: UploadFile = File(...)):
+    """
+    Generate subtitles and return as JSON with segments (mobile app format)
+    
+    Returns:
+    - success: bool
+    - segments: list of {start, end, text}
+    - full_text: complete transcription
+    - srt: SRT formatted subtitles
+    - metadata: {segment_count, filename, timestamp}
+    """
     temp_file_path = None
     
     try:
@@ -334,36 +487,45 @@ async def generate_subtitles_json(file: UploadFile = File(...)):
         
         duration = validate_audio_file(temp_file_path)
         
+        print(f"[SUBTITLES] Generating for: {file.filename}")
         audio, sr = librosa.load(temp_file_path, sr=16000, mono=True)
         
         result = process_long_audio_chunked(audio, sr)
+        print(f"[DEBUG] Result type: {type(result)}, keys: {result.keys() if isinstance(result, dict) else 'N/A'}")
         
-        chunks = result.get("chunks", [])
-        subtitles = []
+        # Create intelligent segments
+        segments = create_segments_from_chunks(result)
+        print(f"[DEBUG] Segments type: {type(segments)}, length: {len(segments)}")
+        if segments:
+            print(f"[DEBUG] First segment: {segments[0]}")
         
-        for i, chunk in enumerate(chunks):
-            start = chunk.get("timestamp", [0, 0])[0] or 0
-            end = chunk.get("timestamp", [0, 0])[1] or start + 2
-            text = chunk.get("text", "").strip()
-            
-            if text:
-                subtitles.append({
-                    "index": i + 1,
-                    "start": start,
-                    "end": end,
-                    "text": text
-                })
+        # Generate SRT content
+        srt_content = generate_srt_content(segments)
         
-        return {
-            "subtitles": subtitles,
-            "total_chunks": len(subtitles),
-            "duration": round(duration, 2)
-        }
+        # Get full text
+        full_text = clean_text(result.get("text", ""))
+        
+        print(f"[SUCCESS] Generated {len(segments)} subtitle segments")
+        
+        return JSONResponse({
+            "success": True,
+            "segments": segments,
+            "full_text": full_text,
+            "srt": srt_content,
+            "metadata": {
+                "segment_count": len(segments),
+                "filename": file.filename,
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        })
         
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Subtitle generation error: {e}")
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"[ERROR] Subtitle generation error: {e}")
+        print(f"[ERROR] Traceback:\n{error_details}")
         raise HTTPException(status_code=500, detail=f"Subtitle generation failed: {str(e)}")
     finally:
         if temp_file_path and os.path.exists(temp_file_path):
@@ -444,7 +606,7 @@ async def generate_subtitles_file(file: UploadFile = File(...), format: str = "s
             except Exception as e:
                 print(f"Cleanup error: {e}")
         if output_file_path and os.path.exists(output_file_path):
-            asyncio.create_task(cleanup_file_later(output_file_path, delay=60))
+            asyncio.create_task(cleanup_file_later(output_file_path, delay=300))
 
 async def cleanup_file_later(file_path, delay: int = 60):
     """Cleanup file after delay to allow download completion"""
@@ -465,6 +627,9 @@ async def websocket_live_transcribe(websocket: WebSocket):
     transcription_history = []
     
     try:
+        consecutive_timeouts = 0
+        max_timeouts = 6  # 6 * 30s = 3 minutes max idle
+        
         await websocket.send_json({
             "type": "connection",
             "status": "connected",
@@ -479,6 +644,7 @@ async def websocket_live_transcribe(websocket: WebSocket):
                     break
                 
                 if "bytes" in data:
+                    consecutive_timeouts = 0
                     audio_chunk = data["bytes"]
                     audio_buffer.extend(audio_chunk)
                     
@@ -521,6 +687,13 @@ async def websocket_live_transcribe(websocket: WebSocket):
                         break
                         
             except asyncio.TimeoutError:
+                consecutive_timeouts += 1
+                if consecutive_timeouts >= max_timeouts:
+                    await websocket.send_json({
+                        "type": "timeout",
+                        "message": "Connection timed out due to inactivity"
+                    })
+                    break
                 await websocket.send_json({
                     "type": "ping",
                     "message": "Keep-alive ping"
