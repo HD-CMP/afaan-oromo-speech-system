@@ -36,9 +36,6 @@ dependencies:
   # Sharing & Export
   share_plus: any
   path: any
-  
-  # URL Launching (open browser directly from Research tab)
-  url_launcher: any
 
   # UI helpers
   flutter_spinkit: any
@@ -95,3 +92,4 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/paper/
+

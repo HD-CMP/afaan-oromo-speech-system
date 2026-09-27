@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../config/app_colors.dart';
 
 class ResearchPaperScreen extends StatefulWidget {
@@ -52,14 +51,12 @@ class _ResearchPaperScreenState extends State<ResearchPaperScreen>
     }
   }
 
+  // Native Android Intent channel — opens URL directly in browser
+  static const _urlChannel = MethodChannel('com.afaanoromo.stt/url_launcher');
+
   Future<void> _openUrl(String url) async {
-    final uri = Uri.parse(url);
     try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        _showCopyFallback(url);
-      }
+      await _urlChannel.invokeMethod('launch', {'url': url});
     } catch (_) {
       _showCopyFallback(url);
     }

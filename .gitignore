@@ -128,4 +128,4 @@ secrets/
 !models/whisper_backend/pytorch_model.bin
 !models/whisper_mobile/android_int8/*.onnx
 
-paper/*.pdf
+
