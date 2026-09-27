@@ -1,0 +1,97 @@
+name: afaan_oromo_speech_ai
+description: AI-powered bidirectional Speech Platform for Afaan Oromo — STT + TTS + OCR
+publish_to: "none"
+version: 2.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.16.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI Components
+  cupertino_icons: ^1.0.2
+  flutter_svg: ^2.0.9
+
+  # HTTP & API
+  http: ^1.1.0
+  dio: ^5.4.0
+
+  # File handling
+  file_picker: any
+  path_provider: any
+  permission_handler: any
+
+  # State management
+  provider: any
+
+  # WebSocket
+  web_socket_channel: any
+
+  # Local storage
+  shared_preferences: any
+
+  # Sharing & Export
+  share_plus: any
+  path: any
+  
+  # URL Launching (for paper & external links)
+  url_launcher: ^6.3.2
+
+  # UI helpers
+  flutter_spinkit: any
+  
+  # Typography
+  google_fonts: ^6.1.0
+  
+  # Animations
+  lottie: ^3.0.0
+  shimmer: ^3.0.0
+  flutter_animate: ^4.5.0
+  animations: ^2.0.11
+  
+  # Audio visualization & recording
+  audio_waveforms: ^1.0.5
+  record: any
+  just_audio: ^0.9.36
+  
+  # Haptic feedback (removed due to compatibility issues)
+  
+  # Icons
+  flutter_feather_icons: ^2.0.0+1
+  
+  # Network detection
+  connectivity_plus: ^5.0.2
+  
+  # Cache management
+  flutter_cache_manager: ^3.3.1
+  
+  # Badges
+  badges: ^3.1.2
+  
+  # Date formatting
+  intl: ^0.18.1
+  
+  # OCR (on-device text recognition)
+  google_mlkit_text_recognition: ^0.15.1
+  
+  # Image picker (for OCR camera/gallery)
+  image_picker: ^1.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+dependency_overrides:
+  record_linux: ^1.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/paper/

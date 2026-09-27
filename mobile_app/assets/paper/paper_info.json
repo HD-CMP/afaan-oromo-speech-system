@@ -1,0 +1,43 @@
+{
+  "title": "Development of an Integrated Speech Technology System for Afaan Oromo",
+  "short_title": "Afaan Oromo Speech Technology",
+  "authors": [
+    "Admassu Ashebir",
+    "Hunde Dejene",
+    "Nimona Asefa"
+  ],
+  "advisor": "Mr. Musa Hayato (MSc)",
+  "institution": "Hawassa University — Hawassa Institute of Technology",
+  "department": "Department of Electrical and Computer Engineering",
+  "degree": "Bachelor of Science in Electrical and Computer Engineering",
+  "stream": "Computer Engineering Stream",
+  "year": 2026,
+  "month": "May",
+  "location": "Hawassa, Ethiopia",
+  "abstract": "Cushitic languages such as Afaan Oromo spoken by over 50 million people in the Horn of Africa remain critically underrepresented in speech technology. While Automatic Speech Recognition (ASR) research for Afaan Oromo has progressed, the absence of Text-to-Speech (TTS) synthesis leaves existing systems fundamentally unidirectional.\n\nThis thesis addresses this gap through a comparative empirical evaluation of three neural TTS architectures — F5-TTS (flow-matching diffusion), VITS (variational inference with adversarial learning), and Fish Speech (codec-based language model) — across ten experimental configurations trained under Kaggle T4 GPU constraints.\n\nThe results demonstrate that architecture selection is more consequential than dataset scale for low-resource TTS: F5-TTS fails to adapt due to dominant English/Mandarin phonetic priors; unfrozen VITS training collapses into GAN-induced artifacts; whereas Fish Speech fine-tuned via Low-Rank Adaptation (LoRA r=32) combined with Retrieval-based Voice Conversion (RVC v2) achieves the highest naturalness and intelligibility, with a Mean Opinion Score (MOS) of 4.35 from a panel of ten native speakers.\n\nConcurrently, the Whisper-Small ASR model was progressively fine-tuned on a corpus expanded to 101,518 pairs (~141 hours), achieving a Word Error Rate of 1.5% on the validation set.\n\nThe final system integrates ASR, TTS, and on-device Google ML Kit OCR into a unified FastAPI backend and cross-platform Flutter mobile application, deployed alongside four web applications on Hugging Face Spaces.",
+  "keywords": [
+    "Afaan Oromoo",
+    "Text-to-Speech Synthesis",
+    "Automatic Speech Recognition",
+    "Low-Resource Language",
+    "VITS",
+    "Fish Speech",
+    "Low-Rank Adaptation (LoRA)",
+    "Retrieval-based Voice Conversion",
+    "Whisper",
+    "Word Error Rate"
+  ],
+  "key_results": [
+    { "metric": "Word Error Rate (WER)", "value": "1.5%", "detail": "Whisper-Small fine-tuned on 101,518 pairs (~141 hours)" },
+    { "metric": "Mean Opinion Score (MOS)", "value": "4.35 / 5.0", "detail": "Fish Speech + LoRA r=32 + RVC v2, 10 native speakers" },
+    { "metric": "Training Corpus", "value": "101,518 pairs", "detail": "~141 hours of Afaan Oromoo speech data" },
+    { "metric": "Best TTS Architecture", "value": "Fish Speech + LoRA", "detail": "LoRA r=32 + Retrieval-based Voice Conversion v2" },
+    { "metric": "Deployment", "value": "4 Hugging Face Spaces", "detail": "FastAPI backend + Flutter mobile + web applications" }
+  ],
+  "github_url": "https://github.com/HNDE/afaan-oromo-stt-api",
+  "huggingface_url": "https://huggingface.co/spaces/HNDE/afaan-oromo-stt-api",
+  "pdf_github_url": "https://raw.githubusercontent.com/HNDE/afaan-oromo-stt-api/main/paper/Afaan_Oromoo_Speech_Thesis_Final.pdf",
+  "pdf_download_url": "https://github.com/HNDE/afaan-oromo-stt-api/raw/main/paper/Afaan_Oromoo_Speech_Thesis_Final.pdf",
+  "citation_apa": "Ashebir, A., Dejene, H., & Asefa, N. (2026). Development of an Integrated Speech Technology System for Afaan Oromo [Bachelor's thesis]. Hawassa University, Hawassa Institute of Technology.",
+  "citation_bibtex": "@thesis{ashebir2026afaan,\n  title={Development of an Integrated Speech Technology System for Afaan Oromo},\n  author={Ashebir, Admassu and Dejene, Hunde and Asefa, Nimona},\n  year={2026},\n  month={May},\n  school={Hawassa University, Hawassa Institute of Technology},\n  address={Hawassa, Ethiopia},\n  type={Bachelor's Thesis},\n  department={Department of Electrical and Computer Engineering}\n}"
+}
