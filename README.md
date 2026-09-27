@@ -1,16 +1,27 @@
-# Development of an Integrated Speech Technology System for Afaan Oromo
+---
+title: Afaan Oromo Integrated Speech Technology
+emoji: 🎙️
+colorFrom: blue
+colorTo: purple
+sdk: docker
+pinned: false
+license: mit
+---
+
+# 🎙️ Development of an Integrated Speech Technology System for Afaan Oromo
 
 <p align="center">
   <img src="https://img.shields.io/badge/Language-Afaan%20Oromoo-blue?style=for-the-badge"/>
-  <img src="https://img.shields.io/badge/WER-1.5%25-brightgreen?style=for-the-badge"/>
-  <img src="https://img.shields.io/badge/MOS-4.35%2F5-gold?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/ASR%20WER-1.5%25-brightgreen?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/TTS%20MOS-4.35%2F5.0-gold?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/Corpus-101%2C518%20pairs-orange?style=for-the-badge"/>
   <img src="https://img.shields.io/badge/License-Open%20Access-green?style=for-the-badge"/>
 </p>
 
-> **Bachelor of Science Thesis** — Hawassa University, Hawassa Institute of Technology  
-> Department of Electrical and Computer Engineering (Computer Engineering Stream)  
-> **Authors**: Admassu Ashebir · Hunde Dejene · Nimona Asefa  
-> **Advisor**: Mr. Musa Hayato (MSc) · **Submitted**: May 2026
+> **Bachelor of Science Thesis** — Hawassa University, Hawassa Institute of Technology
+> Department of Electrical and Computer Engineering · Computer Engineering Stream
+> **Authors**: Admassu Ashebir · Hunde Dejene · Nimona Asefa
+> **Advisor**: Mr. Musa Hayato (MSc) · **Submitted**: May 2026 · Hawassa, Ethiopia
 
 ---
 
@@ -18,11 +29,188 @@
 
 | Format | Link |
 |--------|------|
-| 📥 **Full Thesis PDF** | [Download PDF](paper/Afaan_Oromoo_Speech_Thesis_Final.pdf) |
+| 📥 **Full Thesis PDF** | [Download PDF](https://github.com/HD-CMP/afaan-oromo-speech-system/blob/main/paper/Afaan_Oromoo_Speech_Thesis_Final.pdf) |
 | 🤗 **Live Demo** | [Hugging Face Space](https://huggingface.co/spaces/HNDE/afaan-oromo-stt-api) |
-| 📱 **Mobile App** | [Download APK](https://github.com/HD-CMP/afaan-oromo-speech-system/releases) |
+| 📱 **Mobile App APK** | [Download APK](https://github.com/HD-CMP/afaan-oromo-speech-system/releases) |
 
-### Cite This Work
+---
+
+## 🌍 Why Afaan Oromoo?
+
+Afaan Oromoo (also written Afaan Oromo) is a **Cushitic language** spoken by over **50 million people** in Ethiopia and the Horn of Africa — making it one of the most widely spoken languages on the continent. Despite this, it remains critically **underrepresented in speech technology**:
+
+- No production-ready Text-to-Speech (TTS) system existed
+- Existing ASR systems were fragmented and had high error rates
+- No unified speech platform integrated ASR + TTS + OCR together
+- Speakers could not interact with technology in their native language
+
+This thesis directly addresses this gap by building a **complete, end-to-end integrated speech technology system** covering ASR, TTS, and OCR, deployed as both a live API and a cross-platform mobile application.
+
+---
+
+## 🔬 Research Overview
+
+### Problem Statement
+While Automatic Speech Recognition (ASR) for Afaan Oromoo had seen some progress, the **absence of Text-to-Speech (TTS)** synthesis left existing systems fundamentally unidirectional — users could speak to machines but machines could not speak back. Additionally, no system combined ASR + TTS + OCR into a unified platform accessible to everyday users.
+
+### Approach
+This thesis takes a **comparative empirical approach** — testing multiple state-of-the-art neural architectures across controlled experimental configurations to identify the best performing system under low-resource and GPU-constrained conditions (Kaggle T4 GPU).
+
+---
+
+## 🧠 System Architecture
+
+The system consists of **three core components** integrated into a unified platform:
+
+```
+┌─────────────────────────────────────────────────────┐
+│           Integrated Speech Technology               │
+│                                                      │
+│  ┌──────────────┐  ┌──────────────┐  ┌───────────┐  │
+│  │     ASR      │  │     TTS      │  │    OCR    │  │
+│  │  (Whisper)   │  │ (Fish Speech │  │ (ML Kit)  │  │
+│  │  WER: 1.5%   │  │  + LoRA)     │  │ On-device │  │
+│  │              │  │  MOS: 4.35   │  │           │  │
+│  └──────┬───────┘  └──────┬───────┘  └─────┬─────┘  │
+│         └─────────────────┼────────────────┘        │
+│                           ▼                          │
+│              ┌─────────────────────┐                 │
+│              │   FastAPI Backend   │                 │
+│              │  (HuggingFace API)  │                 │
+│              └──────────┬──────────┘                 │
+│                         ▼                            │
+│          ┌──────────────────────────┐                │
+│          │  Flutter Mobile App      │                │
+│          │  (Android · iOS · Web)   │                │
+│          └──────────────────────────┘                │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🗣️ Component 1 — Automatic Speech Recognition (ASR)
+
+**Model**: OpenAI Whisper-Small fine-tuned on Afaan Oromoo
+
+| Detail | Value |
+|--------|-------|
+| Base model | `openai/whisper-small` |
+| Fine-tuning corpus | 101,518 audio–text pairs (~141 hours) |
+| Training method | Progressive fine-tuning on Kaggle T4 GPU |
+| Final WER | **1.5%** on validation set |
+| HF Model | `HNDE/afaan-oromo-whisper-small` |
+
+**Features implemented:**
+- Real-time speech-to-text transcription
+- Subtitle generation with timestamps (SRT format)
+- Live streaming transcription via WebSocket
+- Batch audio file processing
+
+**Corpus Construction:**
+The training corpus was assembled from multiple sources including studio recordings, public speech datasets, and synthetically augmented data, expanding from an initial smaller set to **101,518 pairs (~141 hours)** through iterative data collection. Progressive fine-tuning was used — starting with a smaller, cleaner subset and expanding to the full corpus as model quality improved.
+
+---
+
+## 🔊 Component 2 — Text-to-Speech Synthesis (TTS)
+
+**Comparative evaluation of 3 neural TTS architectures across 10 configurations:**
+
+### Architecture Comparison
+
+| Architecture | Approach | Result |
+|---|---|---|
+| **F5-TTS** | Flow-matching diffusion | ❌ Failed — strong English/Mandarin phonetic priors prevented adaptation |
+| **VITS** (unfrozen) | Variational inference + adversarial | ❌ Collapsed — GAN training instability caused artifacts |
+| **VITS** (frozen decoder) | Partial fine-tuning | ⚠️ Moderate — limited expressiveness |
+| **Fish Speech + LoRA** | Codec-based LM + Low-Rank Adaptation | ✅ **Best — MOS 4.35/5.0** |
+| **Fish Speech + LoRA + RVC v2** | + Retrieval-based Voice Conversion | ✅ **Best overall naturalness** |
+
+### Key Finding
+> **Architecture selection is more consequential than dataset scale for low-resource TTS.**
+> Fish Speech fine-tuned via LoRA (r=32) combined with RVC v2 achieves the highest naturalness and intelligibility.
+
+### TTS Evaluation
+
+| Metric | Value |
+|--------|-------|
+| Mean Opinion Score (MOS) | **4.35 / 5.0** |
+| Evaluators | 10 native Afaan Oromoo speakers |
+| Best architecture | Fish Speech + LoRA r=32 + RVC v2 |
+| Training platform | Kaggle T4 GPU |
+
+---
+
+## 📷 Component 3 — Optical Character Recognition (OCR)
+
+**Technology**: Google ML Kit (on-device)
+
+- Fully **on-device processing** — no network call needed
+- Reads Afaan Oromoo text from images and camera
+- Feeds recognized text directly into the TTS engine (text → speech from image)
+- Supports the **"Read to Me"** workflow: photograph a document → hear it read aloud in Afaan Oromoo
+
+---
+
+## 📱 Mobile Application
+
+A cross-platform **Flutter mobile application** integrates all three components:
+
+| Screen | Functionality |
+|--------|--------------|
+| 🎤 **ASR / Transcription** | Record speech → get Afaan Oromoo text transcript |
+| 📝 **Subtitles** | Upload audio/video → generate timestamped SRT subtitles |
+| 🔊 **TTS** | Type or paste Afaan Oromoo text → hear it spoken |
+| 📷 **OCR → TTS** | Photograph text → read it aloud |
+| 📖 **Research** | View thesis, citations, results, access paper PDF |
+| 🕐 **History** | All transcriptions and generations saved locally |
+
+**Platform support**: Android (primary), iOS, Web
+
+---
+
+## 🚀 Deployment
+
+The system is deployed across **4 Hugging Face Spaces**:
+
+| Space | Purpose |
+|-------|---------|
+| `HNDE/afaan-oromo-stt-api` | Main FastAPI backend (ASR + TTS + subtitles) |
+| `HNDE/afaan-oromo-whisper-small` | ASR model repository |
+| Additional spaces | TTS demo · Web interface |
+
+**API Endpoints:**
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/transcribe` | POST | Audio file → Afaan Oromoo text |
+| `/generate-subtitles` | POST | Audio → SRT subtitle file |
+| `/tts` | POST | Text → speech audio |
+| `/ws/transcribe` | WebSocket | Live streaming transcription |
+| `/health` | GET | API health check |
+
+---
+
+## 📊 Key Results Summary
+
+| Metric | Result | Details |
+|--------|--------|---------|
+| ASR Word Error Rate | **1.5%** | Whisper-Small on 101,518-pair corpus |
+| TTS Mean Opinion Score | **4.35 / 5.0** | Fish Speech + LoRA r=32 + RVC v2 |
+| Training Corpus | **101,518 pairs** | ~141 hours of Afaan Oromoo speech |
+| Best TTS Model | **Fish Speech + LoRA** | Outperformed F5-TTS and VITS |
+| OCR | **On-device** | Google ML Kit, no network required |
+| Deployment | **4 HF Spaces** | Live API + web demos |
+| Mobile App | **Flutter** | Android · iOS · Web |
+
+---
+
+## 🗝️ Keywords
+
+`Afaan Oromoo` · `Low-Resource Language` · `Automatic Speech Recognition` · `Text-to-Speech` · `Whisper` · `Fish Speech` · `VITS` · `F5-TTS` · `Low-Rank Adaptation (LoRA)` · `Retrieval-based Voice Conversion (RVC)` · `Cushitic Languages` · `Ethiopian NLP` · `Flutter` · `FastAPI` · `HuggingFace`
+
+---
+
+## 📖 Citation
 
 **APA:**
 > Ashebir, A., Dejene, H., & Asefa, N. (2026). *Development of an Integrated Speech Technology System for Afaan Oromo* [Bachelor's thesis]. Hawassa University, Hawassa Institute of Technology.
@@ -30,457 +218,32 @@
 **BibTeX:**
 ```bibtex
 @thesis{ashebir2026afaan,
-  title={Development of an Integrated Speech Technology System for Afaan Oromo},
-  author={Ashebir, Admassu and Dejene, Hunde and Asefa, Nimona},
-  year={2026},
-  month={May},
-  school={Hawassa University, Hawassa Institute of Technology},
-  address={Hawassa, Ethiopia},
-  type={Bachelor's Thesis},
-  department={Department of Electrical and Computer Engineering}
+  title     = {Development of an Integrated Speech Technology System for Afaan Oromo},
+  author    = {Ashebir, Admassu and Dejene, Hunde and Asefa, Nimona},
+  year      = {2026},
+  month     = {May},
+  school    = {Hawassa University, Hawassa Institute of Technology},
+  address   = {Hawassa, Ethiopia},
+  type      = {Bachelor's Thesis},
+  department= {Department of Electrical and Computer Engineering}
 }
 ```
 
 ---
 
-## Abstract
+## 👥 Authors & Acknowledgements
 
-Cushitic languages such as Afaan Oromo spoken by over 50 million people in the Horn of Africa remain critically underrepresented in speech technology. This thesis addresses this gap through a comparative empirical evaluation of three neural TTS architectures — **F5-TTS**, **VITS**, and **Fish Speech** — across ten experimental configurations.
-
-**Key Findings:**
-- Fish Speech fine-tuned via **LoRA (r=32) + RVC v2** achieves the highest naturalness/intelligibility: **MOS = 4.35** (10 native speakers)
-- Whisper-Small ASR fine-tuned on **101,518 pairs (~141 hours)** achieves **WER = 1.5%**
-- Architecture selection is more consequential than dataset scale for low-resource TTS
-- System deployed to **4 Hugging Face Spaces** with FastAPI backend + Flutter mobile app
-
-**Keywords:** Afaan Oromoo · Speech Recognition · Text-to-Speech · VITS · Fish Speech · LoRA · Whisper · Low-Resource NLP
-
----
-
-## Project Overview
-
-**Institution**: Hawassa University — Hawassa Institute of Technology  
-**Timeline**: January 2026 – May 2026
-
-## Statement of the Problem
-
-Most existing speech recognition systems (Google Recorder, Otter.ai) are optimized for high-resource languages like English, Mandarin, and French. Despite being spoken by over 50 million people, Afaan Oromo remains underrepresented in AI-based transcription systems. This gap creates significant challenges:
-
-- **Limited Access**: Oromo speakers face barriers in using voice-driven technologies
-- **Content Creation Gap**: Educators and content creators cannot easily generate Oromo subtitles for digital media
-- **Accessibility Issues**: Hearing-impaired individuals lack localized captioning tools
-- **Digital Preservation**: Risk of language erosion in the digital ecosystem
-
-This project addresses these challenges by developing a localized, open, and accurate STT solution tailored specifically for Afaan Oromo.
+| Role | Name |
+|------|------|
+| Author | Admassu Ashebir |
+| Author | Hunde Dejene |
+| Author | Nimona Asefa |
+| Advisor | Mr. Musa Hayato (MSc) |
+| Institution | Hawassa University — Hawassa Institute of Technology |
+| Location | Hawassa, Ethiopia |
 
 ---
 
-## Objectives
-
-### General Objective
-
-To design and develop an AI-based Android application capable of performing speech-to-text transcription and subtitle generation for the Afaan Oromo language, utilizing a Web Application as an initial development prototype for early testing and validation.
-
-### Specific Objectives
-
-1. Develop a speech-to-text engine for Afaan Oromo using pre-trained models (Whisper/Wav2Vec2)
-2. Create a responsive web interface prototype supporting both real-time (live) and post-recording (instant) transcription modes
-3. Implement a subtitle generation module producing synchronized .srt and .txt files from audio/video inputs
-4. Evaluate transcription accuracy using Word Error Rate (WER) and subtitle synchronization metrics
-5. Ensure secure and privacy-respecting data handling where audio/video files are processed but not permanently stored
-6. Explore semi-offline functionality for low-connectivity users (request queuing system)
-
----
-
-## Features
-
-### Speech-to-Text Modes
-
-**Instant Mode**: Upload or record audio files for transcription after completion  
-**Live Mode**: Real-time transcription during speech (file-based processing)
-
-### Subtitle Generation
-
-Upload audio or video files to generate synchronized subtitles in:
-- `.srt` format (SubRip with timestamps)
-- `.txt` format (plain text transcription)
-
-### Platform Support
-
-**Web Application**: Browser-based prototype using Gradio  
-**Mobile Application**: Android app with API integration and semi-offline capability  
-**Backend API**: Production FastAPI server with database persistence
-
----
-
-## Architecture
-
-### System Components
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Client Layer                          │
-│  ┌──────────────────┐              ┌──────────────────┐    │
-│  │   Web Prototype  │              │   Mobile App     │    │
-│  │    (Gradio UI)   │              │  (Flutter API)   │    │
-│  └──────────────────┘              └──────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      Backend Layer                           │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │              FastAPI Server (Python)                  │  │
-│  │  • REST API endpoints (/transcribe, /subtitles)      │  │
-│  │  • Health monitoring & metrics                        │  │
-│  │  • Database persistence (SQLite)                      │  │
-│  └──────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                       AI Engine                              │
-│  ┌────────────────────┐                                     │
-│  │ Backend Processing │                                     │
-│  │ Whisper (FP16)     │                                     │
-│  │ PyTorch Model      │                                     │
-│  └────────────────────┘                                     │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Model Details
-
-**Base Model**: OpenAI Whisper Medium (fine-tuned for Afaan Oromo)
-
-**Training Datasets** (as specified in proposal):
-1. **Sagalee ASR Dataset**: 100 hours of read speech from 283 speakers
-2. **Jimma University Corpus**: 8,729 utterances from 100 speakers, totaling 18.04 hours
-3. **Afaan Oromoo TTS Synthesis Dataset**: 8,076 short audio clips (17 hours)
-
-**Performance Targets**:
-- **WER on clean audio**: Target ≤25%
-- **WER on noisy audio**: Target ≤35%
-- **Processing time**: 2-5 seconds per 30-second audio
-- **Subtitle synchronization**: Accurate timestamp-based .srt generation
-
----
-
-## Quick Start
-
-### Prerequisites
-
-- Python 3.11+
-- CUDA-compatible GPU (recommended) or CPU
-- Flutter SDK 3.0+ (for mobile app development)
-- 2 GB free disk space (for models)
-
-### Backend Setup
-
-```bash
-# 1. Clone and navigate to project
-cd oromo_asr_backend
-
-# 2. Create virtual environment
-python -m venv venv
-venv\Scripts\activate  # Windows
-source venv/bin/activate  # Linux/Mac
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Configure environment
-cp .env.example .env
-# Edit .env with your settings
-
-# 5. Initialize database
-python scripts/maintenance.py init-db
-
-# 6. Start production API
-python src/api_production.py
-```
-
-API available at: `http://localhost:8000`  
-API documentation: `http://localhost:8000/docs`
-
-### Web Prototype
-
-```bash
-cd src
-python web_prototype.py
-```
-
-Access at: `http://localhost:7860`
-
-### Mobile App
-
-```bash
-cd mobile_app
-flutter pub get
-flutter run
-```
-
-See `mobile_app/README.md` for detailed setup.
-
----
-
-## API Usage
-
-### Transcription Endpoint
-
-```bash
-POST /transcribe
-Content-Type: multipart/form-data
-
-file: <audio_file>
-language: "orm"  # Afaan Oromo
-task: "transcribe"
-```
-
-**Response**:
-```json
-{
-  "transcription": "Translated text in Afaan Oromo",
-  "processing_time": 3.45,
-  "file_size": 1048576,
-  "duration": 30.5
-}
-```
-
-### Subtitle Generation
-
-```bash
-POST /generate-subtitles
-Content-Type: multipart/form-data
-
-file: <audio_or_video_file>
-output_format: "srt"  # or "txt"
-```
-
-**Response**:
-```json
-{
-  "subtitle_file": "subtitles.srt",
-  "segments": [
-    {
-      "start": 0.0,
-      "end": 3.5,
-      "text": "First subtitle segment"
-    }
-  ]
-}
-```
-
-### Health Check
-
-```bash
-GET /health/detailed
-```
-
-**Response**:
-```json
-{
-  "status": "healthy",
-  "model_loaded": true,
-  "database_connected": true,
-  "disk_space_gb": 45.2,
-  "memory_usage_percent": 68.5
-}
-```
-
-Full API documentation: `docs/API_DOCUMENTATION.md`
-
----
-
-## Project Structure
-
-```
-oromo_asr_backend/
-├── src/                          # Source code
-│   ├── api_production.py         # Production FastAPI server
-│   ├── api.py                    # Development API
-│   ├── web_prototype.py          # Gradio web interface
-│   ├── config.py                 # Configuration management
-│   ├── database.py               # SQLite persistence layer
-│   ├── monitoring.py             # Health & metrics monitoring
-│   ├── evaluate.py               # Model evaluation (WER)
-│   └── utils/
-│       └── get_ip.py             # Network utilities
-├── models/                       # AI models
-│   └── whisper_backend/          # Backend PyTorch model
-├── mobile_app/                   # Flutter Android application
-│   ├── lib/
-│   │   ├── services/             # API client
-│   │   ├── providers/            # State management
-│   │   ├── screens/              # UI screens
-│   │   └── widgets/              # Reusable components
-│   └── android/                  # Android platform configuration
-├── scripts/                      # Automation scripts
-│   ├── backup.py                 # Automated database backups
-│   └── maintenance.py            # System maintenance tasks
-├── docs/                         # Documentation
-│   └── API_DOCUMENTATION.md      # Complete API reference
-├── data/                         # Database storage (gitignored)
-├── logs/                         # Application logs
-├── results/                      # Evaluation results
-├── requirements.txt              # Python dependencies
-├── .env.example                  # Environment configuration template
-├── Dockerfile                    # Container image definition
-├── docker-compose.yml            # Docker orchestration
-├── setup_production.bat          # One-click production setup
-└── start_production.bat          # One-click API startup
-```
-
----
-
-## Evaluation
-
-### Running Model Evaluation
-
-```bash
-cd src
-python evaluate.py
-```
-
-**Metrics Calculated**:
-- Word Error Rate (WER)
-- Character Error Rate (CER)
-- Real-Time Factor (RTF)
-- Inference latency
-
-Results saved to: `results/evaluation_results.json`
-
-### Target Performance
-
-| Metric | Target |
-|--------|--------|
-| WER (clean audio) | ≤ 25% |
-| WER (noisy audio) | ≤ 35% |
-| Processing time | 2-5 sec (30-sec audio) |
-
----
-
-## Deployment
-
-### Production Backend
-
-**Option 1: Automated Setup (Windows)**
-```bash
-setup_production.bat      # First time only
-start_production.bat      # Daily startup
-```
-
-**Option 2: Docker**
-```bash
-docker-compose up -d
-```
-
-**Option 3: Manual**
-```bash
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python src/api_production.py
-```
-
-### Mobile App Deployment
-
-**APK Build (Direct Distribution)**
-```bash
-cd mobile_app
-flutter build apk --release
-```
-Output: `build/app/outputs/flutter-apk/app-release.apk`
-
-**App Bundle (Google Play Store)**
-```bash
-flutter build appbundle --release
-```
-Output: `build/app/outputs/bundle/release/app-release.aab`
-
----
-
-## Configuration
-
-### Environment Variables
-
-Copy `.env.example` to `.env` and configure:
-
-```ini
-# Server Configuration
-HOST=0.0.0.0
-PORT=8000
-DEBUG=false
-
-# Model Configuration
-MODEL_PATH=models/whisper_backend
-DEVICE=auto  # auto, cpu, cuda
-BATCH_SIZE=16
-
-# File Limits
-MAX_FILE_SIZE_MB=500
-MAX_AUDIO_DURATION_MINUTES=120
-
-# Database
-DATABASE_URL=sqlite:///data/oromo_stt.db
-ENABLE_DATABASE=true
-
-# Rate Limiting
-MAX_REQUESTS_PER_MINUTE=10
-MAX_CONCURRENT_TRANSCRIPTIONS=3
-
-# Logging
-LOG_LEVEL=INFO
-LOG_FILE=logs/api.log
-```
-
----
-
-## Mobile App Features
-
-### Semi-Offline Capability
-
-The mobile app implements a **request queuing system** for semi-offline functionality:
-
-- **Online Mode**: Direct API communication for transcription
-- **Offline Mode**: Audio files are queued locally
-- **Auto-Sync**: Queue automatically processes when connection is restored
-
-This approach ensures users can continue working in low-connectivity environments as specified in the project proposal.
-
----
-
-## Development Timeline
-
-| Week | Phase | Activities |
-|------|-------|-----------|
-| 1-2 | Research & Data Acquisition | Dataset preparation, literature review |
-| 3-4 | AI Core Development | Model fine-tuning, WER baseline |
-| 5-6 | Backend Engineering | FastAPI server, REST endpoints |
-| 7 | Optimization & Protocol | Model optimization |
-| 8 | Web Prototype | Gradio interface |
-| 9 | Mobile UI | Flutter screens, navigation |
-| 10 | Mobile Integration | API integration, queue system |
-| 11 | Testing & Evaluation | WER evaluation, bug fixes |
-| 12 | Finalization | Documentation, submission |
-
-**Current Status**: Week 10 - Mobile Integration & Testing
-
----
-
-## License
-
-Part of Afaan Oromo STT academic research project. Open-source for educational use.
-
----
-
-## Support
-
-**Setup Issues**: See `docs/SETUP_GUIDE.md`  
-**API Reference**: See `docs/API_DOCUMENTATION.md`  
-**Deployment**: See `docs/DEPLOYMENT_GUIDE.md`
-
----
-
-**Built for the Oromo-speaking community**
-
-
+<p align="center">
+  Made with ❤️ for Afaan Oromoo speakers worldwide · Hawassa University 2026
+</p>
