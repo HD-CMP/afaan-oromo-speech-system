@@ -129,3 +129,50 @@ secrets/
 !models/whisper_mobile/android_int8/*.onnx
 
 
+
+# Training notebooks (contain secrets + large files)
+Training IPYNP files/
+*.ipynb
+
+# Large data/model files
+data/
+models/
+logs/
+evaluation_results/
+
+# Scripts & setup files (not needed in GitHub)
+generate_*.py
+write_*.py
+convert_*.py
+create_*.py
+upload_*.py
+verify_*.py
+server_control.py
+setup_*.bat
+start_production.bat
+Contribution.py
+
+# Generated docs/guides
+COMPLETE_GUIDE.md
+COMPLETE_SETUP_GUIDE.md
+ENHANCEMENTS.md
+REMOTE_SERVER_CONTROL.md
+START_HERE.md
+FREE_HOSTING_OPTIONS.md
+DEPLOYMENT_GUIDE.md
+QUICK_START.md
+UPLOAD_MODEL_GUIDE.md
+huggingface_deployment/
+
+# Test files
+test_data_*.json
+sample_test_data.json
+test_report.md
+test_write.txt
+pytest.ini
+tests/
+src/web_prototype.py
+
+# Misc
+*.bat
+!start_server.bat
