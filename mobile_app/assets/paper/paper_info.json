@@ -34,10 +34,10 @@
     { "metric": "Best TTS Architecture", "value": "Fish Speech + LoRA", "detail": "LoRA r=32 + Retrieval-based Voice Conversion v2" },
     { "metric": "Deployment", "value": "4 Hugging Face Spaces", "detail": "FastAPI backend + Flutter mobile + web applications" }
   ],
-  "github_url": "https://github.com/HNDE/afaan-oromo-stt-api",
+  "github_url": "https://github.com/HD-CMP/afaan-oromo-speech-system",
   "huggingface_url": "https://huggingface.co/spaces/HNDE/afaan-oromo-stt-api",
-  "pdf_github_url": "https://raw.githubusercontent.com/HNDE/afaan-oromo-stt-api/main/paper/Afaan_Oromoo_Speech_Thesis_Final.pdf",
-  "pdf_download_url": "https://github.com/HNDE/afaan-oromo-stt-api/raw/main/paper/Afaan_Oromoo_Speech_Thesis_Final.pdf",
+  "pdf_github_url": "https://github.com/HD-CMP/afaan-oromo-speech-system/releases/download/v1.0/Afaan_Oromoo_Speech_Thesis_Final.pdf",
+  "pdf_download_url": "https://github.com/HD-CMP/afaan-oromo-speech-system/releases/download/v1.0/Afaan_Oromoo_Speech_Thesis_Final.pdf",
   "citation_apa": "Ashebir, A., Dejene, H., & Asefa, N. (2026). Development of an Integrated Speech Technology System for Afaan Oromo [Bachelor's thesis]. Hawassa University, Hawassa Institute of Technology.",
   "citation_bibtex": "@thesis{ashebir2026afaan,\n  title={Development of an Integrated Speech Technology System for Afaan Oromo},\n  author={Ashebir, Admassu and Dejene, Hunde and Asefa, Nimona},\n  year={2026},\n  month={May},\n  school={Hawassa University, Hawassa Institute of Technology},\n  address={Hawassa, Ethiopia},\n  type={Bachelor's Thesis},\n  department={Department of Electrical and Computer Engineering}\n}"
 }

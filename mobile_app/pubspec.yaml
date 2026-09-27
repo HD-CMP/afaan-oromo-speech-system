@@ -37,8 +37,8 @@ dependencies:
   share_plus: any
   path: any
   
-  # URL Launching (for paper & external links)
-  url_launcher: ^6.3.2
+  # URL Launching (open browser directly from Research tab)
+  url_launcher: any
 
   # UI helpers
   flutter_spinkit: any

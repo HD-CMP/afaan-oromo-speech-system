@@ -54,19 +54,39 @@ class _ResearchPaperScreenState extends State<ResearchPaperScreen>
 
   Future<void> _openUrl(String url) async {
     final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Could not open link'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        _showCopyFallback(url);
       }
+    } catch (_) {
+      _showCopyFallback(url);
     }
+  }
+
+  void _showCopyFallback(String url) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.link_rounded, color: Colors.white, size: 16),
+            const SizedBox(width: 8),
+            Expanded(child: Text(url, style: const TextStyle(fontSize: 11))),
+          ],
+        ),
+        backgroundColor: AppColors.surface,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        action: SnackBarAction(
+          label: 'Copy',
+          textColor: AppColors.primary,
+          onPressed: () => Clipboard.setData(ClipboardData(text: url)),
+        ),
+      ),
+    );
   }
 
   void _copyToClipboard(String text, String label) {

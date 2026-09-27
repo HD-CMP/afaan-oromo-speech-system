@@ -20,7 +20,7 @@
 |--------|------|
 | 📥 **Full Thesis PDF** | [Download PDF](paper/Afaan_Oromoo_Speech_Thesis_Final.pdf) |
 | 🤗 **Live Demo** | [Hugging Face Space](https://huggingface.co/spaces/HNDE/afaan-oromo-stt-api) |
-| 📱 **Mobile App** | [Download APK](https://github.com/HNDE/afaan-oromo-stt-api/releases) |
+| 📱 **Mobile App** | [Download APK](https://github.com/HD-CMP/afaan-oromo-speech-system/releases) |
 
 ### Cite This Work
 
@@ -482,3 +482,5 @@ Part of Afaan Oromo STT academic research project. Open-source for educational u
 ---
 
 **Built for the Oromo-speaking community**
+
+
