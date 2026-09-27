@@ -1,0 +1,131 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.pyc
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Project Configuration
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+logs/*
+!logs/.gitkeep
+
+# Database
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+data/*
+!data/.gitkeep
+
+# Temporary Files
+temp/*
+!temp/.gitkeep
+tmp/
+*.tmp
+
+# Backups
+backups/*
+!backups/.gitkeep
+*.bak
+
+# Results and Outputs
+results/*
+!results/.gitkeep
+outputs/
+
+# Model Files (Large Binary Files)
+models/*/model.safetensors
+models/*/pytorch_model.bin
+models/*/*.onnx
+*.h5
+*.pt
+*.pth
+
+# Build Outputs
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+*.cover
+.hypothesis/
+
+# Documentation Builds
+docs/_build/
+site/
+_build/
+
+# Flutter/Dart (Mobile App)
+mobile_app/.dart_tool/
+mobile_app/.flutter-plugins
+mobile_app/.flutter-plugins-dependencies
+mobile_app/.packages
+mobile_app/build/
+mobile_app/ios/Pods/
+mobile_app/ios/.symlinks/
+mobile_app/android/.gradle/
+mobile_app/android/captures/
+mobile_app/android/gradle/
+mobile_app/android/gradlew
+mobile_app/android/gradlew.bat
+mobile_app/android/local.properties
+mobile_app/android/.idea/
+mobile_app/.metadata
+
+# Sensitive Files
+*.key
+*.pem
+*.cer
+*.p12
+secrets/
+
+# Large Media Files (if any test files are accidentally added)
+*.mp4
+*.avi
+*.mov
+*.wav
+*.mp3
+*.m4a
+*.flac
+*.ogg
+
+# Exceptions for specific required files
+!mobile_app/assets/models/*.onnx
+!models/whisper_backend/pytorch_model.bin
+!models/whisper_mobile/android_int8/*.onnx
+
+paper/*.pdf
